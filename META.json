@@ -52,5 +52,16 @@
       }
    },
    "release_status" : "unstable",
+   "resources" : {
+      "bugtracker" : {
+         "web" : "https://github.com/keithbro/Paws-Kinesis-MemoryCaller/issues"
+      },
+      "homepage" : "https://github.com/keithbro/Paws-Kinesis-MemoryCaller",
+      "repository" : {
+         "type" : "git",
+         "url" : "git://github.com/keithbro/Paws-Kinesis-MemoryCaller.git",
+         "web" : "https://github.com/keithbro/Paws-Kinesis-MemoryCaller"
+      }
+   },
    "version" : "0.01"
 }
