@@ -2,6 +2,10 @@ Revision history for Perl extension Paws-Kinesis-MemoryCaller
 
 {{$NEXT}}
 
+0.02 2016-08-14T12:35:45Z
+
+    - Add CPAN deps
+
 0.01 2016-08-14T12:19:53Z
 
     - original version

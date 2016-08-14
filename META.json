@@ -42,6 +42,9 @@
       },
       "runtime" : {
          "requires" : {
+            "Data::UUID" : "0",
+            "List::AllUtils" : "0",
+            "Paws" : "0",
             "perl" : "5.008001"
          }
       },
@@ -63,5 +66,5 @@
          "web" : "https://github.com/keithbro/Paws-Kinesis-MemoryCaller"
       }
    },
-   "version" : "0.01"
+   "version" : "0.02"
 }
