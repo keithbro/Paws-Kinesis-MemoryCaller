@@ -2,6 +2,11 @@ Revision history for Perl extension Paws-Kinesis-MemoryCaller
 
 {{$NEXT}}
 
+0.03 2016-08-14T19:57:40Z
+
+    - Implementation for PutRecords (as opposed to PutRecord)
+    - Improved tests for TRIM_HORIZON and LATAST ShardIteratorTypes
+
 0.02 2016-08-14T12:35:45Z
 
     - Add CPAN deps
