@@ -33,11 +33,11 @@ own streams, shards and records in memory.
 
 The following methods have been implemented:
 
-\* CreateStream
-\* DescribeStream
-\* GetRecords
-\* GetShardIterator
-\* PutRecord
+- CreateStream
+- DescribeStream
+- GetRecords
+- GetShardIterator
+- PutRecord
 
 # LICENSE
 

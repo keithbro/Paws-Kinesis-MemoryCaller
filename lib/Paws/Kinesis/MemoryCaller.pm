@@ -37,11 +37,29 @@ own streams, shards and records in memory.
 
 The following methods have been implemented:
 
-* CreateStream
-* DescribeStream
-* GetRecords
-* GetShardIterator
-* PutRecord
+=over
+
+=item *
+
+CreateStream
+
+=item *
+
+DescribeStream
+
+=item *
+
+GetRecords
+
+=item *
+
+GetShardIterator
+
+=item *
+
+PutRecord
+
+=back
 
 =cut
 
