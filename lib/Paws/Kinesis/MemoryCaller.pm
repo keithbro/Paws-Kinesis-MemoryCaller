@@ -7,7 +7,6 @@ use Moose;
 with "Paws::Net::CallerRole";
 
 use Data::UUID;
-use Data::Dumper;
 use List::AllUtils qw(first_index);
 
 use Paws::Kinesis::DescribeStreamOutput;

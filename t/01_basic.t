@@ -137,7 +137,7 @@ is(
     "record has correct data",
 );
 
-diag Dumper $kinesis->caller->store;
-diag Dumper $kinesis->caller->shard_iterator__address;
+#diag Dumper $kinesis->caller->store;
+#diag Dumper $kinesis->caller->shard_iterator__address;
 
 done_testing;
