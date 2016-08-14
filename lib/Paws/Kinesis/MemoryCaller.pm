@@ -27,6 +27,9 @@ Paws::Kinesis::MemoryCaller - A Paws Caller with in-memory Kinesis.
     # Put a record on a stream...
     $kinesis->PutRecord(%args);
 
+    # Put multiple records on a stream...
+    $kinesis->PutRecords(%args);
+
     # Get records from a stream...
     $kinesis->GetRecords(%args);
 
@@ -58,6 +61,10 @@ GetShardIterator
 =item *
 
 PutRecord
+
+=item *
+
+PutRecords
 
 =back
 
