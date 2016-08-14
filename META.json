@@ -1,7 +1,7 @@
 {
    "abstract" : "A Paws Caller with in-memory Kinesis.",
    "author" : [
-      "Keith Broughton <keithbro256@gmail.com>"
+      "Keith Broughton C<< <keithbro [AT] cpan.org> >>"
    ],
    "dynamic_config" : 0,
    "generated_by" : "Minilla/v3.0.4, CPAN::Meta::Converter version 2.150001",
@@ -66,5 +66,8 @@
          "web" : "https://github.com/keithbro/Paws-Kinesis-MemoryCaller"
       }
    },
-   "version" : "0.02"
+   "version" : "0.02",
+   "x_contributors" : [
+      "Keith Broughton <keithbro256@gmail.com>"
+   ]
 }

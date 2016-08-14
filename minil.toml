@@ -1,4 +1,4 @@
 name = "Paws-Kinesis-MemoryCaller"
-# badges = ["travis"]
+badges = ["travis"]
 module_maker="ModuleBuildTiny"
 

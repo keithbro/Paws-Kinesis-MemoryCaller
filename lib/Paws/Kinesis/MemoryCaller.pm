@@ -3,9 +3,52 @@ use 5.008001;
 
 our $VERSION = "0.02";
 
+=head1 NAME
+
+Paws::Kinesis::MemoryCaller - A Paws Caller with in-memory Kinesis.
+
+=head1 SYNOPSIS
+
+    use Paws;
+    use Paws::Kinesis::MemoryCaller;
+
+    my $kinesis = Paws->service('Kinesis',
+        region      => 'N/A',
+        caller      => Paws::Kinesis::MemoryCaller->new(),
+        credentials => Paws::Credential::None->new(),
+    );
+
+    # Create a Kinesis stream...
+    $kinesis->CreateStream(%args);
+
+    # Get a shard iterator...
+    $kinesis->GetShardIterator(%args);
+
+    # Put a record on a stream...
+    $kinesis->PutRecord(%args);
+
+    # Get records from a stream...
+    $kinesis->GetRecords(%args);
+
+=head1 DESCRIPTION
+
+Paws::Kinesis::MemoryCaller implements Paws::Net::CallerRole which simulates its
+own streams, shards and records in memory.
+
+The following methods have been implemented:
+
+* CreateStream
+* DescribeStream
+* GetRecords
+* GetShardIterator
+* PutRecord
+
+=cut
+
 use Moose;
 with "Paws::Net::CallerRole";
 
+use namespace::autoclean;
 use Data::UUID;
 use List::AllUtils qw(first_index);
 
@@ -28,11 +71,11 @@ sub do_call {
     my $action_class = ref $action;
 
     my $method = {
-        "Paws::Kinesis::CreateStream" => "create_stream",
-        "Paws::Kinesis::DescribeStream" => "describe_stream",
-        "Paws::Kinesis::GetRecords" => "get_records",
-        "Paws::Kinesis::GetShardIterator" => "get_shard_iterator",
-        "Paws::Kinesis::PutRecord" => "put_record",
+        "Paws::Kinesis::CreateStream"       => "create_stream",
+        "Paws::Kinesis::DescribeStream"     => "describe_stream",
+        "Paws::Kinesis::GetRecords"         => "get_records",
+        "Paws::Kinesis::GetShardIterator"   => "get_shard_iterator",
+        "Paws::Kinesis::PutRecord"          => "put_record",
     }->{$action_class} or die "unknown action ($action_class)";
 
     $self->$method($action);
@@ -223,33 +266,7 @@ sub _get_shard_ids_from_stream_name {
     return [ sort { $a <=> $b } keys %$shard_id__records ],
 }
 
-
-1;
-__END__
-
-=encoding utf-8
-
-=head1 NAME
-
-Paws::Kinesis::MemoryCaller - A Paws Caller with in-memory Kinesis.
-
-=head1 SYNOPSIS
-
-    use Paws;
-    use Paws::Kinesis::MemoryCaller;
-
-    my $kinesis = Paws->service('Kinesis',
-        region      => 'N/A',
-        caller      => Paws::Kinesis::MemoryCaller->new(),
-        credentials => Paws::Credential::None->new(),
-    );
-
-    $kinesis->CreateStream(...)
-
-=head1 DESCRIPTION
-
-Paws::Kinesis::MemoryCaller implements Paws::Net::CallerRole which simulates its
-own streams, shards and records.
+__PACKAGE__->meta->make_immutable;
 
 =head1 LICENSE
 
@@ -258,9 +275,16 @@ Copyright (C) Keith Broughton.
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.
 
-=head1 AUTHOR
+=head1 DEVELOPMENT
 
-Keith Broughton E<lt>keithbro256@gmail.comE<gt>
+=head2 Author
+
+Keith Broughton C<< <keithbro [AT] cpan.org> >>
+
+=head2 Bug reports
+
+Please report any bugs or feature requests on GitHub:
+
+L<https://github.com/keithbro/Paws-Kinesis-MemoryCaller/issues>.
 
 =cut
-
