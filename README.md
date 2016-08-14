@@ -2,6 +2,8 @@
 
 Paws::Kinesis::MemoryCaller - A Paws Caller with in-memory Kinesis.
 
+[![Build Status](https://travis-ci.org/keithbro/Paws-Kinesis-MemoryCaller.svg?branch=master)](https://travis-ci.org/keithbro/Paws-Kinesis-MemoryCaller)
+
 # SYNOPSIS
 
     use Paws;
