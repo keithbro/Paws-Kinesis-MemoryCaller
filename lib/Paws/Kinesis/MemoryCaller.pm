@@ -74,8 +74,17 @@ use Paws::Kinesis::DescribeStreamOutput;
 use Paws::Kinesis::GetRecordsOutput;
 use Paws::Kinesis::GetShardIteratorOutput;
 use Paws::Kinesis::PutRecordOutput;
+use Paws::Kinesis::PutRecordsOutput;
 
+use Paws::Kinesis::PutRecord;
+
+use Paws::Kinesis::PutRecordsResultEntry;
+
+use Paws::Kinesis::HashKeyRange;
 use Paws::Kinesis::Record;
+use Paws::Kinesis::Shard;
+use Paws::Kinesis::SequenceNumberRange;
+use Paws::Kinesis::StreamDescription;
 
 has store => (is => 'rw', default => sub { +{} });
 has shard_iterator__address => (is => 'rw', default => sub { +{} });
@@ -89,17 +98,18 @@ sub do_call {
     my $action_class = ref $action;
 
     my $method = {
-        "Paws::Kinesis::CreateStream"       => "create_stream",
-        "Paws::Kinesis::DescribeStream"     => "describe_stream",
-        "Paws::Kinesis::GetRecords"         => "get_records",
-        "Paws::Kinesis::GetShardIterator"   => "get_shard_iterator",
-        "Paws::Kinesis::PutRecord"          => "put_record",
+        "Paws::Kinesis::CreateStream"       => "_create_stream",
+        "Paws::Kinesis::DescribeStream"     => "_describe_stream",
+        "Paws::Kinesis::GetRecords"         => "_get_records",
+        "Paws::Kinesis::GetShardIterator"   => "_get_shard_iterator",
+        "Paws::Kinesis::PutRecord"          => "_put_record",
+        "Paws::Kinesis::PutRecords"         => "_put_records",
     }->{$action_class} or die "unknown action ($action_class)";
 
     $self->$method($action);
 }
 
-sub create_stream {
+sub _create_stream {
     my $self = shift;
     my ($action) = @_;
 
@@ -112,7 +122,7 @@ sub create_stream {
     return undef;
 }
 
-sub get_shard_iterator {
+sub _get_shard_iterator {
     my $self = shift;
     my ($action) = @_;
 
@@ -190,21 +200,44 @@ sub _create_shard_iterator {
     return $shard_iterator;
 }
 
-sub describe_stream {
+sub _describe_stream {
     my $self = shift;
     my ($action) = @_;
 
     my $stream_name = $action->StreamName;
 
-    return Paws::Kinesis::DescribeStreamOutput->new();
+    my $shard_ids = $self->_get_shard_ids_from_stream_name($stream_name);
 
-    return {
-        name => $stream_name,
-        shard_ids => $self->_get_shard_ids_from_stream_name($stream_name),
-    };
+    my $shards = [
+        map {
+            Paws::Kinesis::Shard->new(
+                HashKeyRange => Paws::Kinesis::HashKeyRange->new(
+                    EndingHashKey   => "",
+                    StartingHashKey => "",
+                ),
+                SequenceNumberRange => Paws::Kinesis::SequenceNumberRange->new(
+                    StartingSequenceNumber => "",
+                ),
+                ShardId => $_,
+            )
+        }
+        @$shard_ids
+    ];
+
+    return Paws::Kinesis::DescribeStreamOutput->new(
+        StreamDescription => Paws::Kinesis::StreamDescription->new(
+            EnhancedMonitoring => [],
+            HasMoreShards => "",
+            RetentionPeriodHours => 24,
+            Shards => $shards,
+            StreamARN => "",
+            StreamName => $stream_name,
+            StreamStatus => "",
+        ),
+    );
 }
 
-sub get_records {
+sub _get_records {
     my $self = shift;
     my ($action) = @_;
 
@@ -234,7 +267,7 @@ sub get_records {
     );
 }
 
-sub put_record {
+sub _put_record {
     my $self = shift;
     my ($action) = @_;
 
@@ -256,6 +289,40 @@ sub put_record {
     return Paws::Kinesis::PutRecordOutput->new(
         ShardId => $shard_id,
         SequenceNumber => $sequence_number,
+    );
+}
+
+sub _put_records {
+    my $self = shift;
+    my ($action) = @_;
+
+    my $stream_name = $action->StreamName;
+
+    my $records = [
+        map {
+            my $record = $_;
+
+            my $data = $record->Data;
+            my $paritition_key = $record->PartitionKey;
+
+            my $put_record_output = $self->_put_record(
+                Paws::Kinesis::PutRecord->new(
+                    PartitionKey => $paritition_key,
+                    StreamName   => $stream_name,
+                    Data         => $data,
+                ),
+            );
+
+            Paws::Kinesis::PutRecordsResultEntry->new(
+                ShardId        => $put_record_output->ShardId,
+                SequenceNumber => $put_record_output->SequenceNumber,
+            );
+        }
+        @{$action->Records}
+    ];
+
+    return Paws::Kinesis::PutRecordsOutput->new(
+        Records => $records,
     );
 }
 
