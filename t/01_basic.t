@@ -15,8 +15,8 @@ $kinesis->CreateStream(StreamName => "my_stream", ShardCount => 2);
 
 eq_or_diff($kinesis->caller->store, {
     my_stream => {
-        1 => [],
-        2 => [],
+        'shardId-000000000000' => [],
+        'shardId-000000000001' => [],
     },
 }, "One stream exists, with two empty shards");
 
@@ -37,7 +37,7 @@ is(
 is($put_record_output->SequenceNumber, 1, "Returned a SequenceNumber");
 
 my $get_shard_iterator_output = $kinesis->GetShardIterator(
-    ShardId => 1,
+    ShardId => "shardId-000000000000",
     StreamName => "my_stream",
     ShardIteratorType => "LATEST",
 );
@@ -51,7 +51,7 @@ my $shard_iterator = $get_shard_iterator_output->ShardIterator;
 eq_or_diff(
     $kinesis->caller->shard_iterator__address, {
         $shard_iterator => {
-            shard_id => 1,
+            shard_id => "shardId-000000000000",
             index => 1,
             stream_name => "my_stream",
         },
@@ -91,7 +91,7 @@ eq_or_diff(
 
 $get_shard_iterator_output = $kinesis->GetShardIterator(
     ShardIteratorType => "TRIM_HORIZON",
-    ShardId => 1,
+    ShardId => "shardId-000000000000",
     StreamName => "my_stream",
 );
 
@@ -109,7 +109,7 @@ is scalar @{$get_records_output->Records}, 3, "got 3 records using TRIM_HORIZON"
 $get_shard_iterator_output = $kinesis->GetShardIterator(
     ShardIteratorType => "AT_SEQUENCE_NUMBER",
     StartingSequenceNumber => 3,
-    ShardId => 1,
+    ShardId => "shardId-000000000000",
     StreamName => "my_stream",
 );
 

@@ -179,10 +179,38 @@ sub _get_shard_iterator_latest {
     my $stream_name = $args{stream_name};
     my $shard_id = $args{shard_id};
 
-    my $records = $self->store->{$stream_name}->{$shard_id} || [];
+    my $records = $self->_get_records_from_store(
+        $stream_name, $shard_id,
+    );
+
     my $index = @$records ? scalar @$records : 0;
 
     return $self->_create_shard_iterator($stream_name, $shard_id, $index);
+}
+
+sub _get_records_from_store {
+    my $self = shift;
+    my ($stream_name, $shard_id) = @_;
+
+    my $shard_id__records = $self->store->{$stream_name}
+        or die "stream ($stream_name) not found";
+
+    my $records = $shard_id__records->{$shard_id}
+        or die sprintf(
+            "shard_id(%s) not found. valid shard_ids are (%s)",
+            $shard_id,
+            join(", ", sort { $a cmp $b } keys %$shard_id__records),
+        );
+
+    return $records;
+}
+
+sub _push_record_to_store {
+    my $self = shift;
+    my ($stream_name, $shard_id, $record) = @_;
+
+    my $records = $self->_get_records_from_store($stream_name, $shard_id);
+    push @$records, $record;
 }
 
 sub _get_shard_iterator_trim_horizon {
@@ -262,21 +290,18 @@ sub _get_records {
     my $shard_id = $address->{shard_id};
     my $index = $address->{index};
 
-    my $shard_id__records = $self->store->{$stream_name}
-        or die "stream ($stream_name) not found";
+    my $records = $self->_get_records_from_store(
+        $stream_name, $shard_id,
+    );
 
-    my $records = $shard_id__records->{$shard_id}
-        or die sprintf(
-            "shard_id(%s) not found. valid shard_ids are (%s)",
-            $shard_id,
-            join(", ", keys %$shard_id__records),
-        );
+    # make a copy for splice...
+    my @records = @$records;
 
     return Paws::Kinesis::GetRecordsOutput->new(
         Records => [
             defined $limit
-                ? splice(@$records, $index, $limit)
-                : splice(@$records, $index)
+                ? splice(@records, $index, $limit)
+                : splice(@records, $index)
         ],
         NextShardIterator => $self->_get_shard_iterator_latest(
             stream_name => $stream_name,
@@ -289,20 +314,22 @@ sub _put_record {
     my $self = shift;
     my ($action) = @_;
 
-    my $shard_id =
-        $self->_get_shard_id_from_partition_key($action);
+    my $stream_name = $action->StreamName;
+    my $shard_id = $self->_get_shard_id_from_partition_key($action);
 
-    my $records = $self->store->{$action->StreamName}->{$shard_id};
+    my $records = $self->_get_records_from_store(
+        $stream_name, $shard_id,
+    );
 
     my $sequence_number = scalar(@$records + 1);
 
-    my $new_record = Paws::Kinesis::Record->new(
+    my $record = Paws::Kinesis::Record->new(
         Data => $action->Data,
         PartitionKey => $action->PartitionKey,
         SequenceNumber => $sequence_number,
     );
 
-    push @$records, $new_record;
+    $self->_push_record_to_store($stream_name, $shard_id, $record);
 
     return Paws::Kinesis::PutRecordOutput->new(
         ShardId => $shard_id,
