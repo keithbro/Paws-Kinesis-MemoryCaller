@@ -139,15 +139,16 @@ sub _get_shard_iterator {
     my $shard_iterator_type = $action->ShardIteratorType;
 
     my $method = {
-        LATEST             => "_get_shard_iterator_latest",
-        TRIM_HORIZON       => "_get_shard_iterator_trim_horizon",
-        AT_SEQUENCE_NUMBER => "_get_shard_iterator_at_sequence_number",
+        LATEST                  => "_get_shard_iterator_latest",
+        TRIM_HORIZON            => "_get_shard_iterator_trim_horizon",
+        AT_SEQUENCE_NUMBER      => "_get_shard_iterator_at_sequence_number",
+        AFTER_SEQUENCE_NUMBER   => "_get_shard_iterator_after_sequence_number",
     }->{$shard_iterator_type}
         or die "unknown shard_iterator_type ($shard_iterator_type)";
 
     my $shard_iterator = $self->$method(
-        stream_name => $action->StreamName,
-        shard_id => $action->ShardId,
+        stream_name     => $action->StreamName,
+        shard_id        => $action->ShardId,
         sequence_number => $action->StartingSequenceNumber,
     );
 
@@ -156,20 +157,46 @@ sub _get_shard_iterator {
     );
 }
 
+sub _get_shard_iterator_after_sequence_number {
+    my $self = shift;
+    my %args = @_;
+
+    my $index = $self->_get_index_by_sequence_number(%args);
+
+    return $self->_create_shard_iterator(
+        $args{stream_name},
+        $args{shard_id},
+        $index + 1,
+    );
+}
+
 sub _get_shard_iterator_at_sequence_number {
+    my $self = shift;
+    my %args = @_;
+
+    my $index = $self->_get_index_by_sequence_number(%args);
+
+    return $self->_create_shard_iterator(
+        $args{stream_name},
+        $args{shard_id},
+        $index,
+    );
+}
+
+sub _get_index_by_sequence_number {
     my $self = shift;
     my %args = @_;
 
     my $stream_name = $args{stream_name};
     my $shard_id = $args{shard_id};
-    my $sequence_number = $args{sequence_number};
+    my $sequence_number = $args{sequence_number}
+        or die "StartingSequenceNumber is required";
 
-    my $records = $self->store->{$stream_name}->{$shard_id};
-    my $index = first_index {
+    my $records = $self->_get_records_from_store($stream_name, $shard_id);
+
+    return first_index {
         $_->SequenceNumber eq $sequence_number
     } @$records;
-
-    return $self->_create_shard_iterator($stream_name, $shard_id, $index);
 }
 
 sub _get_shard_iterator_latest {
@@ -179,21 +206,28 @@ sub _get_shard_iterator_latest {
     my $stream_name = $args{stream_name};
     my $shard_id = $args{shard_id};
 
-    my $records = $self->_get_records_from_store(
-        $stream_name, $shard_id,
-    );
+    my $records = $self->_get_records_from_store($stream_name, $shard_id);
 
     my $index = @$records ? scalar @$records : 0;
 
     return $self->_create_shard_iterator($stream_name, $shard_id, $index);
 }
 
+sub _get_shard_id__records {
+    my $self = shift;
+    my ($stream_name) = @_;
+
+    my $shard_id__records = $self->store->{$stream_name}
+        or die "stream ($stream_name) not found";
+
+    return $shard_id__records;
+}
+
 sub _get_records_from_store {
     my $self = shift;
     my ($stream_name, $shard_id) = @_;
 
-    my $shard_id__records = $self->store->{$stream_name}
-        or die "stream ($stream_name) not found";
+    my $shard_id__records = $self->_get_shard_id__records($stream_name);
 
     my $records = $shard_id__records->{$shard_id}
         or die sprintf(
@@ -290,9 +324,7 @@ sub _get_records {
     my $shard_id = $address->{shard_id};
     my $index = $address->{index};
 
-    my $records = $self->_get_records_from_store(
-        $stream_name, $shard_id,
-    );
+    my $records = $self->_get_records_from_store($stream_name, $shard_id);
 
     # make a copy for splice...
     my @records = @$records;
@@ -317,9 +349,7 @@ sub _put_record {
     my $stream_name = $action->StreamName;
     my $shard_id = $self->_get_shard_id_from_partition_key($action);
 
-    my $records = $self->_get_records_from_store(
-        $stream_name, $shard_id,
-    );
+    my $records = $self->_get_records_from_store($stream_name, $shard_id);
 
     my $sequence_number = scalar(@$records + 1);
 
@@ -390,8 +420,7 @@ sub _get_shard_ids_from_stream_name {
     my $self = shift;
     my ($stream_name) = @_;
 
-    my $shard_id__records = $self->store->{$stream_name}
-        or die "stream ($stream_name) does not exist";
+    my $shard_id__records = $self->_get_shard_id__records($stream_name);
 
     return [ sort { $a cmp $b } keys %$shard_id__records ],
 }
