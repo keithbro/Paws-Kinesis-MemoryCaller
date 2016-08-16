@@ -66,8 +66,9 @@
          "web" : "https://github.com/keithbro/Paws-Kinesis-MemoryCaller"
       }
    },
-   "version" : "0.03",
+   "version" : "0.04",
    "x_contributors" : [
+      "Keith Broughton <keith.broughton@net-a-porter.com>",
       "Keith Broughton <keithbro256@gmail.com>"
    ]
 }
