@@ -352,13 +352,13 @@ sub _put_record {
     my $stream_name = $action->StreamName;
     my $data = $action->Data;
 
+    decode_base64($data) && length($data) % 4 == 0
+        or die "Data($data) is not valid Base64";
+
     my $shard_id = $self->_get_shard_id_from_partition_key($action);
     my $records = $self->_get_records_from_store($stream_name, $shard_id);
 
     my $sequence_number = scalar(@$records + 1);
-
-    decode_base64($data) && $data !~ m/\n/
-        or die "Data($data) is not valid Base64";
 
     my $record = Paws::Kinesis::Record->new(
         Data            => $data,

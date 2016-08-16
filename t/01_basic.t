@@ -4,6 +4,8 @@ use Paws;
 use Paws::Credential::None;
 use Paws::Kinesis::MemoryCaller;
 
+use MIME::Base64 qw(decode_base64 encode_base64);
+
 my $kinesis = Paws->service('Kinesis',
     region      => 'N/A',
     credentials => Paws::Credential::None->new(),
@@ -24,16 +26,7 @@ eq_or_diff(
     "no shard_iterators exist yet",
 );
 
-my $put_record_output = $kinesis->PutRecord(
-    Data => "1st message",
-    StreamName => "my_stream",
-    PartitionKey => "my_partition_key",
-);
-is(
-    ref($put_record_output), "Paws::Kinesis::PutRecordOutput",
-    "got a Paws::Kinesis::PutRecordOutput",
-);
-is($put_record_output->SequenceNumber, 1, "Returned a SequenceNumber");
+assert_put_record(data => "1st Message", expected_sequence_number => 1);
 
 my $get_shard_iterator_output = $kinesis->GetShardIterator(
     ShardId => "shardId-000000000000",
@@ -66,25 +59,16 @@ eq_or_diff(
 );
 ok $get_records_output->NextShardIterator, "got NextShardIterator";
 
-$kinesis->PutRecord(
-    Data => "2nd message",
-    StreamName => "my_stream",
-    PartitionKey => "my_partition_key",
-);
-
-$kinesis->PutRecord(
-    Data => "3rd message",
-    StreamName => "my_stream",
-    PartitionKey => "my_partition_key",
-);
+assert_put_record(data => "2nd Message", expected_sequence_number => 2);
+assert_put_record(data => "3rd Message", expected_sequence_number => 3);
 
 $get_records_output = $kinesis->GetRecords(
     ShardIterator => $get_records_output->NextShardIterator,
 );
 is(scalar @{$get_records_output->Records}, 2, "got two records");
 eq_or_diff(
-    [ map { $_->Data } @{$get_records_output->Records} ],
-    [ "2nd message", "3rd message" ],
+    [ map { decode_base64($_->Data) } @{$get_records_output->Records} ],
+    [ "2nd Message", "3rd Message" ],
     "found the new messages on the shard_iterator",
 );
 
@@ -132,8 +116,33 @@ is(
 );
 
 is(
-    $get_records_output->Records->[0]->Data, "3rd message",
+    decode_base64($get_records_output->Records->[0]->Data), "3rd Message",
     "record has correct data",
 );
 
 done_testing;
+
+sub assert_put_record {
+    my %args = @_;
+
+    my $data = $args{data};
+    my $expected_sequence_number = $args{expected_sequence_number};
+
+    my $base64_data = encode_base64($data, "");
+
+    my $put_record_output = $kinesis->PutRecord(
+        Data => $base64_data,
+        StreamName => "my_stream",
+        PartitionKey => "my_partition_key",
+    );
+
+    is(
+        ref($put_record_output), "Paws::Kinesis::PutRecordOutput",
+        "got a Paws::Kinesis::PutRecordOutput",
+    );
+
+    is(
+        $put_record_output->SequenceNumber, $expected_sequence_number,
+        "Returned the expected SequenceNumber",
+    );
+}

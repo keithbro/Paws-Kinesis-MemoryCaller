@@ -42,17 +42,6 @@ throws_ok(
     sub {
         $kinesis->PutRecord(
             Data => "a",
-            StreamName => "x",
-            PartitionKey => 1,
-        );
-    },
-    qr/StreamName\(x\) does not exist/,
-);
-
-throws_ok(
-    sub {
-        $kinesis->PutRecord(
-            Data => "a",
             StreamName => $existent_stream_name,
             PartitionKey => 1,
         );
@@ -82,18 +71,16 @@ ok(
 
 throws_ok(
     sub {
-        $kinesis->PutRecords(
-            Records => [
-                {
-                    Data => 1,
-                    PartitionKey => 1,
-                }
-            ],
+        $kinesis->PutRecord(
+            Data => encode_base64("a", ""),
             StreamName => "x",
+            PartitionKey => 1,
         );
     },
     qr/StreamName\(x\) does not exist/,
 );
+
+note "PutRecords";
 
 throws_ok(
     sub {
@@ -108,6 +95,21 @@ throws_ok(
         );
     },
     qr/Data\(1\) is not valid Base64/,
+);
+
+throws_ok(
+    sub {
+        $kinesis->PutRecords(
+            Records => [
+                {
+                    Data => encode_base64(1, ""),
+                    PartitionKey => 1,
+                }
+            ],
+            StreamName => "x",
+        );
+    },
+    qr/StreamName\(x\) does not exist/,
 );
 
 ok(

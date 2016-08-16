@@ -4,6 +4,7 @@ use Paws;
 use Paws::Credential::None;
 use Paws::Kinesis::MemoryCaller;
 use Paws::Kinesis::PutRecordsRequestEntry;
+use MIME::Base64 qw(decode_base64 encode_base64);
 
 my $kinesis = Paws->service('Kinesis',
     region      => 'N/A',
@@ -19,17 +20,18 @@ my $describe_stream_output = $kinesis->DescribeStream(
 
 my $shard_id = $describe_stream_output->StreamDescription->Shards->[0]->ShardId;
 
+my $record_request_entries = [
+    map {
+        +{
+            Data => encode_base64("Message #$_", ""),
+            PartitionKey => "olympics",
+        };
+    }
+    1..6
+];
+
 $kinesis->PutRecords(
-    Records => [
-        Paws::Kinesis::PutRecordsRequestEntry->new(
-            Data => "1st Message",
-            PartitionKey => "olympics",
-        ),
-        Paws::Kinesis::PutRecordsRequestEntry->new(
-            Data => "2nd Message",
-            PartitionKey => "olympics",
-        ),
-    ],
+    Records => $record_request_entries,
     StreamName => "my_stream",
 );
 
@@ -48,17 +50,18 @@ ok($next_shard_iterator, "got a new shard_iterator ($next_shard_iterator)");
 
 is scalar @$records, 0, 'got zero records';
 
+$record_request_entries = [
+    map {
+        Paws::Kinesis::PutRecordsRequestEntry->new(
+            Data => encode_base64("Message #$_", ""),
+            PartitionKey => "olympics",
+        );
+    }
+    4..5
+];
+
 $kinesis->PutRecords(
-    Records => [
-        Paws::Kinesis::PutRecordsRequestEntry->new(
-            Data => "3rd Message",
-            PartitionKey => "olympics",
-        ),
-        Paws::Kinesis::PutRecordsRequestEntry->new(
-            Data => "4th Message",
-            PartitionKey => "olympics",
-        ),
-    ],
+    Records => $record_request_entries,
     StreamName => "my_stream",
 );
 
@@ -68,7 +71,7 @@ $records = $get_records_output->Records;
 
 ok($next_shard_iterator, "got a new shard_iterator ($next_shard_iterator)");
 is scalar @$records, 2, 'got two records';
-is $records->[0]->Data, "3rd Message", "got correct data";
-is $records->[1]->Data, "4th Message", "got correct data";
+is decode_base64($records->[0]->Data), "Message #4", "got correct data";
+is decode_base64($records->[1]->Data), "Message #5", "got correct data";
 
 done_testing;
