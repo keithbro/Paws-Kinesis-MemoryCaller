@@ -120,9 +120,12 @@ sub _create_stream {
     my $self = shift;
     my ($action) = @_;
 
-    my $shard_count = $action->ShardCount;
+    my $last_shard = $action->ShardCount - 1;
 
-    my $shard_id__records = { map { $_ => [] } 1..$shard_count };
+    my $shard_id__records = {
+        map { sprintf("shardId-%012d", $_) => [] }
+        0..$last_shard
+    };
 
     $self->store->{$action->StreamName} = $shard_id__records;
 
@@ -176,7 +179,7 @@ sub _get_shard_iterator_latest {
     my $stream_name = $args{stream_name};
     my $shard_id = $args{shard_id};
 
-    my $records = $self->store->{$stream_name}->{$shard_id};
+    my $records = $self->store->{$stream_name}->{$shard_id} || [];
     my $index = @$records ? scalar @$records : 0;
 
     return $self->_create_shard_iterator($stream_name, $shard_id, $index);
@@ -259,13 +262,21 @@ sub _get_records {
     my $shard_id = $address->{shard_id};
     my $index = $address->{index};
 
-    my @records = @{$self->store->{$stream_name}->{$shard_id}};
+    my $shard_id__records = $self->store->{$stream_name}
+        or die "stream ($stream_name) not found";
+
+    my $records = $shard_id__records->{$shard_id}
+        or die sprintf(
+            "shard_id(%s) not found. valid shard_ids are (%s)",
+            $shard_id,
+            join(", ", keys %$shard_id__records),
+        );
 
     return Paws::Kinesis::GetRecordsOutput->new(
         Records => [
             defined $limit
-                ? splice(@records, $index, $limit)
-                : splice(@records, $index)
+                ? splice(@$records, $index, $limit)
+                : splice(@$records, $index)
         ],
         NextShardIterator => $self->_get_shard_iterator_latest(
             stream_name => $stream_name,
@@ -355,7 +366,7 @@ sub _get_shard_ids_from_stream_name {
     my $shard_id__records = $self->store->{$stream_name}
         or die "stream ($stream_name) does not exist";
 
-    return [ sort { $a <=> $b } keys %$shard_id__records ],
+    return [ sort { $a cmp $b } keys %$shard_id__records ],
 }
 
 __PACKAGE__->meta->make_immutable;
