@@ -3,7 +3,7 @@ use Test::Most;
 use Paws;
 use Paws::Credential::None;
 use Paws::Kinesis::MemoryCaller;
-use Paws::Kinesis::PutRecordsRequestEntry;
+
 use MIME::Base64 qw(decode_base64 encode_base64);
 
 my $kinesis = Paws->service('Kinesis',

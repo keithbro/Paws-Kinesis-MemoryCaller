@@ -3,7 +3,6 @@ use Test::Most;
 use Paws;
 use Paws::Credential::None;
 use Paws::Kinesis::MemoryCaller;
-use Paws::Kinesis::PutRecordsRequestEntry;
 
 use MIME::Base64 qw(decode_base64 encode_base64);
 
@@ -23,10 +22,10 @@ my $shard_id = $describe_stream_output->StreamDescription->Shards->[0]->ShardId;
 
 my $record_request_entries = [
     map {
-        Paws::Kinesis::PutRecordsRequestEntry->new(
+        +{
             Data => encode_base64("Message #$_", ""),
             PartitionKey => "olympics",
-        );
+        };
     }
     1..6
 ];
@@ -54,10 +53,10 @@ is scalar @$records, 2, 'got two records';
 
 $record_request_entries = [
     map {
-        Paws::Kinesis::PutRecordsRequestEntry->new(
+        +{
             Data => encode_base64("Message #$_", ""),
             PartitionKey => "olympics",
-        );
+        };
     }
     7..8
 ];
