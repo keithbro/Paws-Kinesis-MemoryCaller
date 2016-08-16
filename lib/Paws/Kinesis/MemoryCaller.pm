@@ -76,6 +76,7 @@ with "Paws::Net::CallerRole";
 use namespace::autoclean;
 use Data::UUID;
 use List::AllUtils qw(first_index);
+use MIME::Base64 qw(decode_base64);
 
 use Paws::Kinesis::DescribeStreamOutput;
 use Paws::Kinesis::GetRecordsOutput;
@@ -111,7 +112,7 @@ sub do_call {
         "Paws::Kinesis::GetShardIterator"   => "_get_shard_iterator",
         "Paws::Kinesis::PutRecord"          => "_put_record",
         "Paws::Kinesis::PutRecords"         => "_put_records",
-    }->{$action_class} or die "unknown action ($action_class)";
+    }->{$action_class} or die "($action_class) is not implemented";
 
     $self->$method($action);
 }
@@ -121,6 +122,8 @@ sub _create_stream {
     my ($action) = @_;
 
     my $last_shard = $action->ShardCount - 1;
+    $last_shard >= 0
+        or die "ShardCount must be greater than zero to CreateStream";
 
     my $shard_id__records = {
         map { sprintf("shardId-%012d", $_) => [] }
@@ -144,7 +147,7 @@ sub _get_shard_iterator {
         AT_SEQUENCE_NUMBER      => "_get_shard_iterator_at_sequence_number",
         AFTER_SEQUENCE_NUMBER   => "_get_shard_iterator_after_sequence_number",
     }->{$shard_iterator_type}
-        or die "unknown shard_iterator_type ($shard_iterator_type)";
+        or die "ShardIteratorType($shard_iterator_type) is invalid or not implemented";
 
     my $shard_iterator = $self->$method(
         stream_name     => $action->StreamName,
@@ -218,7 +221,7 @@ sub _get_shard_id__records {
     my ($stream_name) = @_;
 
     my $shard_id__records = $self->store->{$stream_name}
-        or die "stream ($stream_name) not found";
+        or die "StreamName($stream_name) does not exist";
 
     return $shard_id__records;
 }
@@ -231,7 +234,7 @@ sub _get_records_from_store {
 
     my $records = $shard_id__records->{$shard_id}
         or die sprintf(
-            "shard_id(%s) not found. valid shard_ids are (%s)",
+            "ShardId(%s) does not exist. ShardIds are (%s)",
             $shard_id,
             join(", ", sort { $a cmp $b } keys %$shard_id__records),
         );
@@ -318,7 +321,7 @@ sub _get_records {
 
     my $address =
         $self->shard_iterator__address->{$shard_iterator}
-            or die "shard_iterator ($shard_iterator) not found";
+            or die "ShardIterator($shard_iterator) does not exist";
 
     my $stream_name = $address->{stream_name};
     my $shard_id = $address->{shard_id};
@@ -347,16 +350,20 @@ sub _put_record {
     my ($action) = @_;
 
     my $stream_name = $action->StreamName;
-    my $shard_id = $self->_get_shard_id_from_partition_key($action);
+    my $data = $action->Data;
 
+    my $shard_id = $self->_get_shard_id_from_partition_key($action);
     my $records = $self->_get_records_from_store($stream_name, $shard_id);
 
     my $sequence_number = scalar(@$records + 1);
 
+    decode_base64($data) && $data !~ m/\n/
+        or die "Data($data) is not valid Base64";
+
     my $record = Paws::Kinesis::Record->new(
-        Data => $action->Data,
-        PartitionKey => $action->PartitionKey,
-        SequenceNumber => $sequence_number,
+        Data            => $data,
+        PartitionKey    => $action->PartitionKey,
+        SequenceNumber  => $sequence_number,
     );
 
     $self->_push_record_to_store($stream_name, $shard_id, $record);
