@@ -261,7 +261,7 @@ sub _create_shard_iterator {
     my $self = shift;
     my ($stream_name, $shard_id, $index) = @_;
 
-    my $shard_iterator = Data::UUID->new->create_str();
+    my $shard_iterator = Data::UUID->new->create_b64();
 
     $self->shard_iterator__address->{$shard_iterator} = {
         stream_name => $stream_name,
