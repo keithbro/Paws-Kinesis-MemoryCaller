@@ -4,6 +4,6 @@ requires 'Paws';
 requires 'List::AllUtils';
 
 on 'test' => sub {
-    requires 'Test::More', '0.98';
+    requires 'Test::Most';
 };
 
