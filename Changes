@@ -2,6 +2,10 @@ Revision history for Perl extension Paws-Kinesis-MemoryCaller
 
 {{$NEXT}}
 
+0.05 2016-08-18T12:00:34Z
+
+    - List Test::Most as a dependency
+
 0.04 2016-08-16T21:33:51Z
 
     - PutRecord now requires Base64 data.
