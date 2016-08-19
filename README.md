@@ -11,7 +11,7 @@ Paws::Kinesis::MemoryCaller - A Paws Caller with in-memory Kinesis.
     my $kinesis = Paws->service('Kinesis',
         region      => 'N/A',
         caller      => Paws::Kinesis::MemoryCaller->new(),
-        credentials => Paws::Credential::None->new(),
+        credentials => Paws::Credential::Environment->new(),
     );
 
     # Create a Kinesis stream...
