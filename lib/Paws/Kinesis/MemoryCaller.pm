@@ -1,7 +1,7 @@
 package Paws::Kinesis::MemoryCaller;
 use 5.008001;
 
-our $VERSION = "0.05";
+our $VERSION = "0.06";
 
 =head1 NAME
 

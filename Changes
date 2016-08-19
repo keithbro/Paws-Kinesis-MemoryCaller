@@ -2,6 +2,10 @@ Revision history for Perl extension Paws-Kinesis-MemoryCaller
 
 {{$NEXT}}
 
+0.06 2016-08-19T18:35:39Z
+
+    - Tests use Paws::Credential::Environment, passes in older Paws versions
+
 0.05 2016-08-18T12:00:34Z
 
     - List Test::Most as a dependency
