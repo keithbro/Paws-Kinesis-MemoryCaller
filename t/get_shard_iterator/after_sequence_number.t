@@ -1,14 +1,14 @@
 use Test::Most;
 
 use Paws;
-use Paws::Credential::None;
+use Paws::Credential::Environment;
 use Paws::Kinesis::MemoryCaller;
 
 use MIME::Base64 qw(decode_base64 encode_base64);
 
 my $kinesis = Paws->service('Kinesis',
     region      => 'N/A',
-    credentials => Paws::Credential::None->new(),
+    credentials => Paws::Credential::Environment->new(),
     caller      => Paws::Kinesis::MemoryCaller->new(),
 );
 
