@@ -78,6 +78,9 @@ use Data::UUID;
 use List::AllUtils qw(first_index);
 use MIME::Base64 qw(decode_base64);
 
+use Paws;
+use Paws::Credential::Environment;
+
 use Paws::Kinesis::DescribeStreamOutput;
 use Paws::Kinesis::GetRecordsOutput;
 use Paws::Kinesis::GetShardIteratorOutput;
@@ -96,6 +99,16 @@ use Paws::Kinesis::StreamDescription;
 
 has store => (is => 'rw', default => sub { +{} });
 has shard_iterator__address => (is => 'rw', default => sub { +{} });
+
+sub new_kinesis {
+    my $class = shift;
+
+    return Paws->service('Kinesis',
+        caller      => $class->new(),
+        credentials => Paws::Credential::Environment->new(),
+        region      => "N/A",
+    );
+}
 
 sub caller_to_response {}
 
@@ -327,21 +340,22 @@ sub _get_records {
     my $shard_id = $address->{shard_id};
     my $index = $address->{index};
 
-    my $records = $self->_get_records_from_store($stream_name, $shard_id);
+    my @stream_shard_records =
+        @{$self->_get_records_from_store($stream_name, $shard_id)};
 
-    # make a copy for splice...
-    my @records = @$records;
+    my $end_index = defined $limit
+        ? $index + $limit - 1
+        : scalar @stream_shard_records - 1;
+
+    my $records = [ @stream_shard_records[$index..$end_index] ];
+
+    my $next_shard_iterator = $self->_create_shard_iterator(
+        $stream_name, $shard_id, $end_index + 1 ,
+    );
 
     return Paws::Kinesis::GetRecordsOutput->new(
-        Records => [
-            defined $limit
-                ? splice(@records, $index, $limit)
-                : splice(@records, $index)
-        ],
-        NextShardIterator => $self->_get_shard_iterator_latest(
-            stream_name => $stream_name,
-            shard_id => $shard_id,
-        ),
+        Records => $records,
+        NextShardIterator => $next_shard_iterator,
     );
 }
 
