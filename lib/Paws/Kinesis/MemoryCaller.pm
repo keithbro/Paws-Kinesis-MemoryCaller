@@ -9,9 +9,6 @@ Paws::Kinesis::MemoryCaller - A Paws Caller with in-memory Kinesis.
 
 =head1 SYNOPSIS
 
-    use Paws;
-    use Paws::Kinesis::MemoryCaller;
-
     my $kinesis = Paws->service('Kinesis',
         region      => 'N/A',
         caller      => Paws::Kinesis::MemoryCaller->new(),
@@ -23,15 +20,6 @@ Paws::Kinesis::MemoryCaller - A Paws Caller with in-memory Kinesis.
     my $kinesis = Paws::Kinesis::MemoryCaller->new_kinesis();
 
     # Then use $kinesis as you would normally, for example:
-
-    # Create a Kinesis stream...
-    $kinesis->CreateStream(%args);
-
-    # Get a shard iterator...
-    $kinesis->GetShardIterator(%args);
-
-    # Put a record on a stream...
-    $kinesis->PutRecord(%args);
 
     # Put multiple records on a stream...
     $kinesis->PutRecords(%args);
@@ -103,8 +91,27 @@ use Paws::Kinesis::Shard;
 use Paws::Kinesis::SequenceNumberRange;
 use Paws::Kinesis::StreamDescription;
 
-has store => (is => 'rw', default => sub { +{} });
-has shard_iterator__address => (is => 'rw', default => sub { +{} });
+has store => (is => 'ro', isa => 'HashRef', default => sub { +{} });
+has shard_iterator__address => (
+    is => 'ro',
+    isa => 'HashRef',
+    default => sub { +{} },
+);
+
+=head1 METHODS
+
+=head2 new_kinesis
+
+Shortcut method to create a new Kinesis service instance that uses this caller.
+Equivalent to:
+
+    Paws->service('Kinesis',
+        caller      => Paws::Kinesis::MemoryCaller->new(),
+        credentials => Paws::Credential::Environment->new(),
+        region      => "N/A",
+    );
+
+=cut
 
 sub new_kinesis {
     my $class = shift;
