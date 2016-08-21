@@ -18,6 +18,12 @@ Paws::Kinesis::MemoryCaller - A Paws Caller with in-memory Kinesis.
         credentials => Paws::Credential::Environment->new(),
     );
 
+    # or simply...
+
+    my $kinesis = Paws::Kinesis::MemoryCaller->new_kinesis();
+
+    # Then use $kinesis as you would normally, for example:
+
     # Create a Kinesis stream...
     $kinesis->CreateStream(%args);
 
