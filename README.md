@@ -5,23 +5,17 @@ Paws::Kinesis::MemoryCaller - A Paws Caller with in-memory Kinesis.
 
 # SYNOPSIS
 
-    use Paws;
-    use Paws::Kinesis::MemoryCaller;
-
     my $kinesis = Paws->service('Kinesis',
         region      => 'N/A',
         caller      => Paws::Kinesis::MemoryCaller->new(),
         credentials => Paws::Credential::Environment->new(),
     );
 
-    # Create a Kinesis stream...
-    $kinesis->CreateStream(%args);
+    # or simply...
 
-    # Get a shard iterator...
-    $kinesis->GetShardIterator(%args);
+    my $kinesis = Paws::Kinesis::MemoryCaller->new_kinesis();
 
-    # Put a record on a stream...
-    $kinesis->PutRecord(%args);
+    # Then use $kinesis as you would normally, for example:
 
     # Put multiple records on a stream...
     $kinesis->PutRecords(%args);
@@ -42,6 +36,19 @@ The following methods have been implemented:
 - GetShardIterator
 - PutRecord
 - PutRecords
+
+# METHODS
+
+## new\_kinesis
+
+Shortcut method to create a new Kinesis service instance that uses this caller.
+Equivalent to:
+
+    Paws->service('Kinesis',
+        caller      => Paws::Kinesis::MemoryCaller->new(),
+        credentials => Paws::Credential::Environment->new(),
+        region      => "N/A",
+    );
 
 # LICENSE
 
