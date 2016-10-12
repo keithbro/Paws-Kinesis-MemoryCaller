@@ -65,6 +65,38 @@ eq_or_diff(
     "correct records with NextShardIterator + no Limit",
 );
 
+$shard_iterator = $get_records_output->NextShardIterator;
 
+$get_records_output = $kinesis->GetRecords(
+    ShardIterator => $shard_iterator,
+    Limit => 5,
+);
+
+eq_or_diff(
+    $get_records_output->Records, [],
+    "no records returned despite the limit",
+);
+
+$kinesis->PutRecords(
+    StreamName => "my_stream",
+    Records => [
+        {
+            PartitionKey => "abc",
+            Data => encode_base64("Message 7", ""),
+        },
+    ],
+);
+
+$shard_iterator = $get_records_output->NextShardIterator;
+
+$get_records_output = $kinesis->GetRecords(
+    ShardIterator => $shard_iterator,
+);
+
+eq_or_diff(
+    [ map { decode_base64($_->Data) } @{$get_records_output->Records} ],
+    [ "Message 7" ],
+    "correct records with NextShardIterator + no Limit",
+);
 
 done_testing;

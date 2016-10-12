@@ -358,12 +358,12 @@ sub _get_records {
 
     my $end_index = defined $limit
         ? $index + $limit - 1
-        : scalar @stream_shard_records - 1;
+        : scalar(@stream_shard_records) - 1;
 
-    my $records = [ @stream_shard_records[$index..$end_index] ];
+    my $records = [ grep { $_ } @stream_shard_records[$index..$end_index] ];
 
     my $next_shard_iterator = $self->_create_shard_iterator(
-        $stream_name, $shard_id, $end_index + 1 ,
+        $stream_name, $shard_id, $index + scalar(@$records),
     );
 
     return Paws::Kinesis::GetRecordsOutput->new(
