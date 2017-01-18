@@ -4,7 +4,7 @@
       "Keith Broughton C<< <keithbro [AT] cpan.org> >>"
    ],
    "dynamic_config" : 0,
-   "generated_by" : "Minilla/v3.0.4, CPAN::Meta::Converter version 2.150005",
+   "generated_by" : "Minilla/v3.0.9, CPAN::Meta::Converter version 2.150005",
    "license" : [
       "perl_5"
    ],
@@ -66,10 +66,10 @@
          "web" : "https://github.com/keithbro/Paws-Kinesis-MemoryCaller"
       }
    },
-   "version" : "0.08",
+   "version" : "0.09",
    "x_contributors" : [
-      "Keith Broughton <keithbro256@gmail.com>",
-      "Keith Broughton <keith.broughton@net-a-porter.com>"
+      "Keith Broughton <keith.broughton@net-a-porter.com>",
+      "Keith Broughton <keithbro256@gmail.com>"
    ],
    "x_serialization_backend" : "JSON::PP version 2.27300"
 }
