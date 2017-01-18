@@ -332,6 +332,7 @@ sub _describe_stream {
             RetentionPeriodHours => 24,
             Shards => $shards,
             StreamARN => "",
+            StreamCreationTimestamp => "",
             StreamName => $stream_name,
             StreamStatus => "",
         ),
